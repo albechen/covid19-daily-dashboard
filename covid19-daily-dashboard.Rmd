@@ -122,6 +122,11 @@ latest_date <- sort(cv$Date, decreasing = TRUE)[1] - 1
 ##### Latest Date of Dataset: `r latest_date`
 ###### Updated: `r Sys.time()` EST
 
+This dashboard is used to track the current progress of the COVID-19 progress throughout the world. The visualization and information presented are automatically updated to current data scraped from the [Johns Hopkin’s COVID-19 Data Repository](https://github.com/CSSEGISandData/COVID-19). Their current data is sourced for sources such as World Health Organization (WHO), China CDC, US CDC, and more.
+
+The data is cleaned and aggregated through R, formatted in Rmarkdown, and exported as an HTML document to be hosted through GitPages. The source R notebook can be found at [covid19-daily-dashboard.Rmd](https://github.com/albechen/covid19-daily-dashboard/blob/master/covid19-daily-dashboard.Rmd) in the [source GitHub repository](https://github.com/albechen/covid19-daily-dashboard).
+
+
 ```{r empty_df_function, echo=FALSE, message=FALSE, warning=FALSE}
 empty_df <- function() {
   empty_df <- data.frame(
@@ -175,6 +180,11 @@ new_cases_week <- first_and_new_cases(cv, 7)
 
 ### New Cases of the Day (`r latest_date`)
 
+The 'New Cases of the Day' map displays all confirmed cases of the specified date. The map was produced through Leaflet and provides a detailed and interactive map that shows the location and number of cases of the day.
+
+Also, to differentiate if the case of the day is the first case in the specified location, it is highlighted red. All the specified points on the map are listed in the table below, including cumulative count of each location.
+
+
 ```{r day_leafly_plot, echo=FALSE, warning=FALSE}
 first_color <- colorFactor(palette = c("red", "blue"), levels = c(TRUE, FALSE))
 
@@ -217,6 +227,8 @@ df_new_cases_day
 
 ### New Cases of the Week (`r latest_date`)
 
+The 'New Cases of the Week' map displays all confirmed cases of the week starting from the specified date. This map shows the same information as the daily cases map but includes all cases in the past week.
+
 ```{r week_leafly_plot, echo=FALSE}
 first_color <- colorFactor(palette = c("red", "blue"), levels = c(TRUE, FALSE))
 
@@ -258,6 +270,8 @@ df_new_cases_week
 ```
 
 ### COVID19 Cases Spread Timelapse
+
+The time-lapse was produced through gganimate and shows the spread of the virus since 22Jan2020. The time-lapse cycles through the dates, showing the color coded increase of confirmed, recovered, and death cases across the world.
 
 ```{r timelaps_cases, echo=FALSE, message=FALSE, warning=FALSE, error=False, results='hide', include=FALSE}
 p <- ggplot() +
@@ -324,6 +338,27 @@ percent_org <- percent_count %>%
   gather(key="Status", value="Percent", -Date)
 ```
 
+### Graphical Trends
+
+The plot below outlines general trends seen of the virus over time:
+
+(1)	“Percent of Cases Recovered or Dead per Day”: the total percent of cases that have resulted in recovery or death per confirmed case
+
+(2)	"Cumulative Status of All Cases": the continuous increase of confirmed, death, and recovered cases over time 
+
+(3)	“Status of Cases per Day”: the number of cases classified as confirmed, death, or recovered subtracted to show per day changes
+
+```{r plot_percent_cases, echo=FALSE, fig.width=6, fig.height=4.5}
+ggplot(percent_org, aes(x = Date, y=Percent, group=Status)) +
+  geom_line(aes(color = Status)) +
+  ggtitle("Percent of Cases Recovered or Dead per Day") +
+  scale_color_manual(values = c("red3", "green3")) +
+  scale_x_date(date_breaks = "7 day", 
+               date_minor_breaks = "7 day", 
+               date_labels = "%b %d") +
+  theme_light() +
+  theme(legend.position="bottom", legend.title = element_blank())
+```
 
 ```{r plot_cumulative_status, echo=FALSE, fig.width=6, fig.height=4.5}
 ggplot(dead_conf_recv, aes(x = Date, y=Count, group=Status)) +
@@ -351,17 +386,7 @@ ggplot(dead_conf_recv_daily, aes(x = Date, y=Count, group=Daily)) +
 ```
 
 
-```{r plot_percent_cases, echo=FALSE, fig.width=6, fig.height=4.5}
-ggplot(percent_org, aes(x = Date, y=Percent, group=Status)) +
-  geom_line(aes(color = Status)) +
-  ggtitle("Percent of Cases Recovered or Dead per Day") +
-  scale_color_manual(values = c("red3", "green3")) +
-  scale_x_date(date_breaks = "7 day", 
-               date_minor_breaks = "7 day", 
-               date_labels = "%b %d") +
-  theme_light() +
-  theme(legend.position="bottom", legend.title = element_blank())
-```
+
 
 
 ```{r github_pushing_commands, include=FALSE}
