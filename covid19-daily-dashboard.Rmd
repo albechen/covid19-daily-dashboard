@@ -70,7 +70,7 @@ cv <- cv[with(cv, order(Country_Region, Province_State, Status, Date)), ]
 
 
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r function_check_first_case, echo=FALSE, message=FALSE, warning=FALSE}
 check_continuous <- function(x, cv, num_prev) {
   if (
     (cv$Long[x] != cv$Long[x - num_prev]) ||
@@ -114,15 +114,15 @@ daily_weekly_counter <- function(cv) {
 ```
 
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r, apply_check_case, echo=FALSE, message=FALSE, warning=FALSE}
 cv <- daily_weekly_counter(cv)
 latest_date <- sort(cv$Date, decreasing = TRUE)[1] - 1
 ```
 
-#### Latest Date of Dataset: `r latest_date`
-##### Updated: `r Sys.time()` EST
+##### Latest Date of Dataset: `r latest_date`
+###### Updated: `r Sys.time()` EST
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r empty_df_function, echo=FALSE, message=FALSE, warning=FALSE}
 empty_df <- function() {
   empty_df <- data.frame(
     Province_State = character(0),
@@ -141,7 +141,7 @@ empty_df <- function() {
 ```
 
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r new_cases_agg, echo=FALSE, message=FALSE, warning=FALSE}
 first_and_new_cases <- function(cv, days) {
   high_date <- sort(cv$Date, decreasing = TRUE)[1] - 1
   cv <- filter(cv, Status == "Confirmed")
@@ -173,7 +173,9 @@ new_cases_day <- first_and_new_cases(cv, 1)
 new_cases_week <- first_and_new_cases(cv, 7)
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+### New Cases of the Day (`r latest_date`)
+
+```{r day_leafly_plot, echo=FALSE, warning=FALSE}
 first_color <- colorFactor(palette = c("red", "blue"), levels = c(TRUE, FALSE))
 
 new_day_labels <- function(df) {
@@ -204,7 +206,7 @@ leaflet(data = new_cases_day, width = "100%") %>%
   )
 ```
 
-```{r, echo=FALSE}
+```{r day_table_new, echo=FALSE}
 df_new_cases_day <- new_cases_day %>%
   select(
     Date, Country_Region, Province_State,
@@ -213,8 +215,9 @@ df_new_cases_day <- new_cases_day %>%
 df_new_cases_day
 ```
 
+### New Cases of the Week (`r latest_date`)
 
-```{r, echo=FALSE}
+```{r week_leafly_plot, echo=FALSE}
 first_color <- colorFactor(palette = c("red", "blue"), levels = c(TRUE, FALSE))
 
 new_week_labels <- function(df) {
@@ -245,7 +248,7 @@ leaflet(data = new_cases_week, width = "100%") %>%
   )
 ```
 
-```{r, echo=FALSE}
+```{r week_table_new, echo=FALSE}
 df_new_cases_week <- new_cases_week %>%
   select(
     Date, Country_Region, Province_State,
@@ -254,8 +257,9 @@ df_new_cases_week <- new_cases_week %>%
 df_new_cases_week
 ```
 
+### COVID19 Cases Spread Timelapse
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, error=False, results='hide', include=FALSE}
+```{r timelaps_cases, echo=FALSE, message=FALSE, warning=FALSE, error=False, results='hide', include=FALSE}
 p <- ggplot() +
   borders("world", colour = "white", fill = "gray85") +
   coord_map(xlim = c(-180, 180), ylim = c(-55, 70)) +
@@ -282,7 +286,7 @@ anim_save("covid19_timelapse.gif", p, height = 600, width = 1000, fps = 10, nfra
 ![](covid19_timelapse.gif)
 
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, include=FALSE}
+```{r cases_count_percent_agg, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 percent_count <- cv_merge %>%
   group_by(Date) %>%
   summarise(
@@ -302,30 +306,65 @@ for (x in seq(1, nrow(percent_count))) {
     percent_count$Daily_Recovered[x] <- percent_count$Recovered[x] - percent_count$Recovered[x - 1]
   }
 }
+
+dead_conf_recv <- percent_count %>%
+  select(Date, Confirmed, Dead, Recovered) %>%
+  gather(key="Status", value="Count", -Date)
+
+dead_conf_recv_daily <- percent_count %>%
+  select(Date, Daily_Confirmed, Daily_Dead, Daily_Recovered) %>%
+  gather(key="Daily", value="Count", -Date)
+
 percent_count$Percent_Dead <- percent_count$Dead / percent_count$Confirmed
 
 percent_count$Percent_Recovered <- percent_count$Recovered / percent_count$Confirmed
+
+percent_org <- percent_count %>%
+  select(Date, Percent_Recovered, Percent_Dead) %>%
+  gather(key="Status", value="Percent", -Date)
 ```
 
 
-
-```{r, echo=FALSE}
-ggplot(percent_count, aes(x = Date)) +
-  geom_line(aes(y = Daily_Confirmed, color = "Confirmed")) +
-  geom_line(aes(y = Daily_Recovered, color = "Recovered")) +
-  geom_line(aes(y = Daily_Dead, color = "Dead"))
-
-ggplot(percent_count, aes(x = Date)) +
-  geom_line(aes(y = Confirmed, color = "Confirmed")) +
-  geom_line(aes(y = Recovered, color = "Recovered")) +
-  geom_line(aes(y = Dead, color = "Dead"))
-
-ggplot(percent_count, aes(x = Date)) +
-  geom_line(aes(y = Percent_Recovered, color = "Recovered")) +
-  geom_line(aes(y = Percent_Dead, color = "Dead"))
+```{r plot_cumulative_status, echo=FALSE, fig.width=6, fig.height=4.5}
+ggplot(dead_conf_recv, aes(x = Date, y=Count, group=Status)) +
+  geom_line(aes(color = Status)) +
+  ggtitle("Cumulative Status of All Cases") +
+  scale_color_manual(values = c("blue3", "red3", "green3")) +
+  scale_x_date(date_breaks = "7 day", 
+               date_minor_breaks = "7 day", 
+               date_labels = "%b %d") +
+  theme_light() +
+  theme(legend.position="bottom", legend.title = element_blank())
 ```
 
-```{r, include=FALSE}
+
+```{r plot_status_per_day, echo=FALSE, fig.width=6, fig.height=4.5}  
+ggplot(dead_conf_recv_daily, aes(x = Date, y=Count, group=Daily)) +
+  geom_line(aes(color = Daily)) +
+  ggtitle("Status of Cases per Day") +
+  scale_color_manual(values = c("blue3", "red3", "green3")) +
+  scale_x_date(date_breaks = "7 day", 
+               date_minor_breaks = "7 day", 
+               date_labels = "%b %d")+
+  theme_light() +
+  theme(legend.position="bottom", legend.title = element_blank())
+```
+
+
+```{r plot_percent_cases, echo=FALSE, fig.width=6, fig.height=4.5}
+ggplot(percent_org, aes(x = Date, y=Percent, group=Status)) +
+  geom_line(aes(color = Status)) +
+  ggtitle("Percent of Cases Recovered or Dead per Day") +
+  scale_color_manual(values = c("red3", "green3")) +
+  scale_x_date(date_breaks = "7 day", 
+               date_minor_breaks = "7 day", 
+               date_labels = "%b %d") +
+  theme_light() +
+  theme(legend.position="bottom", legend.title = element_blank())
+```
+
+
+```{r github_pushing_commands, include=FALSE}
 gitstatus <- function(dir = getwd()) {
   cmd_list <- list(
     cmd1 = tolower(substr(dir, 1, 2)),
@@ -364,18 +403,18 @@ gitpush <- function(dir = getwd()) {
 git2r::config(user.name = "albechen", user.email = "alchen244@gmail.com")
 ```
 
-```{r, include=FALSE}
+```{r save_doc, include=FALSE}
 documentSave(getActiveDocumentContext())
+Sys.sleep(5)
 ```
 
-
-```{r, include=FALSE}
+```{r github_push_all, include=FALSE}
 gitstatus()
 gitadd()
 gitcommit()
 gitpush()
 ```
 
-```{r, include=FALSE}
+```{r save_doc, include=FALSE}
 documentSave(getActiveDocumentContext())
 ```
