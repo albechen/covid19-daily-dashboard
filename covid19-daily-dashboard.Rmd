@@ -338,9 +338,22 @@ percent_org <- percent_count %>%
   gather(key="Status", value="Percent", -Date)
 ```
 
-### Graphical Trends
+### General Trends
 
-The plot below outlines general trends seen of the virus over time:
+The table below shows aggregated data of each country's confirmed, recovered, and dead population. Each column can be sorted to view least or most of each status or to sort alphabetically by country / region name.
+
+```{r country_table, echo=FALSE}
+country_table <- cv_merge %>%
+  select(Country_Region, Confirmed, Recovered, Dead) %>%
+  group_by(Country_Region) %>%
+  summarise_all(funs(sum))
+country_table <- country_table[with(country_table, order(-Confirmed, -Recovered, -Dead)), ]
+
+country_table
+```
+
+
+The plots below outlines general trends seen of the virus over time:
 
 (1)	“Percent of Cases Recovered or Dead per Day”: the total percent of cases that have resulted in recovery or death per confirmed case
 
