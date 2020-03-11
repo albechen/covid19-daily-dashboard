@@ -415,6 +415,6 @@ gitcommit()
 gitpush()
 ```
 
-```{r save_doc, include=FALSE}
+```{r save_doc2, include=FALSE}
 documentSave(getActiveDocumentContext())
 ```
