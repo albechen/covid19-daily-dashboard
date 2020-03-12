@@ -287,7 +287,7 @@ p <- ggplot() +
     legend.text = element_text(size = 15),
     legend.title = element_text(size = 17, face = "bold")
   ) +
-  guides(color = guide_legend(override.aes = list(size = 5))) +
+  guides(color = guide_legend(override.aes = list(size = 5)), size = "none") +
   transition_time(Date) +
   enter_fade() +
   exit_fade() +
