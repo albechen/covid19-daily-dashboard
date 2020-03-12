@@ -1,5 +1,4 @@
 library(rmarkdown)
-library(drat)
 library(git2r)
 
 
