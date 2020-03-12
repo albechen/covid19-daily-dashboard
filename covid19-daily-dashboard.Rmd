@@ -1,7 +1,6 @@
 ---
 title: "COVID19 Daily Dashboard"
 output: html_notebook
-code_folding: hide
     
 ---
 
@@ -451,8 +450,4 @@ gitstatus()
 gitadd()
 gitcommit()
 gitpush()
-```
-
-```{r save_doc2, include=FALSE}
-documentSave(getActiveDocumentContext())
 ```
