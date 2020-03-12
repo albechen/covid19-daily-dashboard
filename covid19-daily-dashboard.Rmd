@@ -443,7 +443,7 @@ git2r::config(user.name = "albechen", user.email = "alchen244@gmail.com")
 
 ```{r save_doc, include=FALSE}
 documentSave(getActiveDocumentContext())
-Sys.sleep(5)
+Sys.sleep(20)
 ```
 
 ```{r github_push_all, include=FALSE}
