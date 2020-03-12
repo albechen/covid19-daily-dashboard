@@ -346,7 +346,7 @@ The table below shows aggregated data of each country's confirmed, recovered, an
 country_table <- cv_merge %>%
   select(Country_Region, Confirmed, Recovered, Dead) %>%
   group_by(Country_Region) %>%
-  summarise_all(funs(sum))
+  summarise_all(sum)
 country_table <- country_table[with(country_table, order(-Confirmed, -Recovered, -Dead)), ]
 
 country_table
