@@ -273,7 +273,7 @@ df_new_cases_week
 
 The time-lapse was produced through gganimate and shows the spread of the virus since 22Jan2020. The time-lapse cycles through the dates, showing the color coded increase of confirmed, recovered, and death cases across the world.
 
-```{r timelaps_cases, echo=FALSE, message=FALSE, warning=FALSE, error=False, results='hide', include=FALSE}
+```{r timelaps_cases, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, results='hide', include=FALSE}
 p <- ggplot() +
   borders("world", colour = "white", fill = "gray85") +
   coord_map(xlim = c(-180, 180), ylim = c(-55, 70)) +
