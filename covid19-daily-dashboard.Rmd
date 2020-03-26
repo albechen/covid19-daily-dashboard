@@ -31,9 +31,9 @@ library(gifski)
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 link <- "https://github.com//CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/"
 csv_list <- c(
+  "time_series_covid19_confirmed_global.csv",
   "time_series_covid19_deaths_global.csv",
-  "time_series_covid19_deaths_global.csv",
-  "time_series_covid19_deaths_global.csv"
+  "time_series_covid19_recovered_global.csv"
 )
 
 
@@ -45,13 +45,13 @@ for (csv in csv_list) {
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-cv_con <- read_csv("data_raw/time_series_covid19_deaths_global.csv") %>%
+cv_con <- read_csv("data_raw/time_series_covid19_confirmed_global.csv") %>%
   gather(key = "Date", value = Confirmed, -Lat, -Long, -`Province/State`, -`Country/Region`)
 
 cv_ded <- read_csv("data_raw/time_series_covid19_deaths_global.csv") %>%
   gather(key = "Date", value = Dead, -Lat, -Long, -`Province/State`, -`Country/Region`)
 
-cv_rec <- read_csv("data_raw/time_series_covid19_deaths_global.csv") %>%
+cv_rec <- read_csv("data_raw/time_series_covid19_recovered_global.csv") %>%
   gather(key = "Date", value = Recovered, -Lat, -Long, -`Province/State`, -`Country/Region`)
 ```
 
@@ -148,7 +148,8 @@ empty_df <- function() {
 ```{r new_cases_agg, echo=FALSE, message=FALSE, warning=FALSE}
 first_and_new_cases <- function(cv, days) {
   high_date <- sort(cv$Date, decreasing = TRUE)[1] - 1
-  cv <- filter(cv, Status == "Confirmed")
+  cv <- cv %>% 
+    filter(Status == "Confirmed", !is.na(Count))
   cv$First_Case <- FALSE
 
   for (x in seq(1, nrow(cv))) {
