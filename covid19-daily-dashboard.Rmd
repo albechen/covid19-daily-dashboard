@@ -116,6 +116,7 @@ daily_weekly_counter <- function(cv) {
 ```{r, apply_check_case, echo=FALSE, message=FALSE, warning=FALSE}
 cv <- daily_weekly_counter(cv)
 latest_date <- sort(cv$Date, decreasing = TRUE)[1] - 1
+cv <- filter(cv, Date <= latest_date)
 ```
 
 ##### Latest Date of Dataset: `r latest_date`
@@ -303,6 +304,7 @@ anim_save("covid19_timelapse.gif", p, height = 600, width = 1000, fps = 10, nfra
 ```{r cases_count_percent_agg, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 percent_count <- cv_merge %>%
   group_by(Date) %>%
+  filter(Date <= latest_date) %>%
   summarise(
     Confirmed = sum(Confirmed, na.rm = TRUE),
     Dead = sum(Dead, na.rm = TRUE),
@@ -335,7 +337,7 @@ percent_count$Percent_Recovered <- percent_count$Recovered / percent_count$Confi
 
 percent_org <- percent_count %>%
   select(Date, Percent_Recovered, Percent_Dead) %>%
-  gather(key="Status", value="Percent", -Date)
+  gather(key="Status", value="Percent", -Date) 
 ```
 
 ### General Trends
