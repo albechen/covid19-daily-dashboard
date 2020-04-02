@@ -184,11 +184,11 @@ new_cases_week <- first_and_new_cases(cv, 7)
 ```{r, echo=FALSE}
 cv_latest <- filter(cv_merge, Date == latest_date)
 cv_latest <- cv_latest[with(cv_latest, order(-Confirmed, -Recovered, -Dead)), ]
-cv_latest
 ```
 
-
-```{r , echo=FALSE}
+### Overview of Cases (`r latest_date`)
+Below is an interactive plot displaying the number of confirmed, dead, and recovered cases per country and province if data is specified. The data was aggregated from the Johns Hopkins's data repository and this notebook is set to run nightly to provide up to date results
+```{r full_plot, echo=FALSE}
 cv_latest_labels <- function(df) {
   labs <- lapply(seq(nrow(df)), function(i) {
     paste0(
@@ -212,7 +212,12 @@ leaflet(data = cv_latest, width = "100%") %>%
   )
 ```
 
-The table below shows aggregated data of each country's confirmed, recovered, and dead population. Each column can be sorted to view least or most of each status or to sort alphabetically by country / region name.
+
+### Confirmed Cases per Country
+The table below shows aggregated data of each country's confirmed, recovered, and dead population. Each column can be sorted to view least or most of each status. The graphs below show the total and daily count of confirmed cases for the countries with the most cases and are tracked by days since the first reported case.
+
+(*China's dataset goes back further and therefore does not align with other countries)
+
 
 ```{r country_table, echo=FALSE}
 country_table <- cv_merge %>%
@@ -226,7 +231,7 @@ country_table <- country_table[with(country_table, order(-Confirmed, -Recovered,
 country_table
 ```
 
-```{r, echo=FALSE}
+```{r df_for_top_countries, echo=FALSE}
 top_10_countries <- (head(country_table$Country_Region, 15))
 
 top10_df <- cv %>%
@@ -254,7 +259,7 @@ for (x in seq(2, nrow(top10_df))) {
 }
 ```
 
-```{r , echo=FALSE, fig.width=10, fig.height=6}  
+```{r plot_first_cases_total, echo=FALSE, fig.width=10, fig.height=6}  
 ggplot(top10_df, aes(x = `Days Since First Case`, y=Count, group=Country_Region)) +
   geom_line(aes(color = Country_Region), size=1) +
   ggtitle("Total Confirmed Cases Since First Case") +
@@ -262,14 +267,43 @@ ggplot(top10_df, aes(x = `Days Since First Case`, y=Count, group=Country_Region)
   theme(legend.position="bottom", legend.title = element_blank())
 ```
 
-
-```{r , echo=FALSE, fig.width=10, fig.height=6}  
+```{r daily_confirmed_cases, echo=FALSE, fig.width=10, fig.height=6}  
 ggplot(top10_df, aes(x = `Days Since First Case`, y=Daily_Count, group=Country_Region)) +
   geom_line(aes(color = Country_Region), size=1) +
-  ggtitle("Total Confirmed Cases Daily Since First Case") +
+  ggtitle("Daily Confirmed Cases Since First Case") +
   theme_light() +
   theme(legend.position="bottom", legend.title = element_blank())
 ```
+
+### COVID19 Cases Spread Timelapse
+
+The time-lapse was produced through gganimate and shows the spread of the virus since 22Jan2020. The time-lapse cycles through the dates, showing the color coded increase of confirmed, recovered, and death cases across the world.
+
+```{r timelaps_cases, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, results='hide', include=FALSE}
+p <- ggplot() +
+  borders("world", colour = "white", fill = "gray85") +
+  coord_map(xlim = c(-180, 180), ylim = c(-55, 70)) +
+  theme_map() +
+  geom_point(data = filter(cv, Date<=latest_date), aes(x = Long, y = Lat, size = log(Count), color = Status), alpha = 0.25) +
+  scale_size_continuous(range = c(1, 15)) +
+  scale_color_manual(values = c("blue", "red", "green")) +
+  labs(title = "Date: {frame_time}", size = "Log(Cases)") +
+  theme(
+    plot.title = element_text(size =25, face = "bold"),
+    legend.text = element_text(size = 15),
+    legend.title = element_text(size = 17, face = "bold")
+  ) +
+  guides(color = guide_legend(override.aes = list(size = 5)), size = "none") +
+  transition_time(Date) +
+  enter_fade() +
+  exit_fade() +
+  ease_aes("linear")
+
+days = as.numeric(latest_date - as.Date("2020-01-22"))
+
+anim_save("covid19_timelapse.gif", p, height = 600, width = 1000, fps = 10, nframes = days*2, end_pause = 30)
+```
+![](covid19_timelapse.gif)
 
 ### New Cases of the Day (`r latest_date`)
 
@@ -361,37 +395,6 @@ df_new_cases_week <- new_cases_week %>%
   )
 df_new_cases_week
 ```
-
-### COVID19 Cases Spread Timelapse
-
-The time-lapse was produced through gganimate and shows the spread of the virus since 22Jan2020. The time-lapse cycles through the dates, showing the color coded increase of confirmed, recovered, and death cases across the world.
-
-```{r timelaps_cases, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, results='hide', include=FALSE}
-p <- ggplot() +
-  borders("world", colour = "white", fill = "gray85") +
-  coord_map(xlim = c(-180, 180), ylim = c(-55, 70)) +
-  theme_map() +
-  geom_point(data = filter(cv, Date<=latest_date), aes(x = Long, y = Lat, size = log(Count), color = Status), alpha = 0.25) +
-  scale_size_continuous(range = c(1, 15)) +
-  scale_color_manual(values = c("blue", "red", "green")) +
-  labs(title = "Date: {frame_time}", size = "Log(Cases)") +
-  theme(
-    plot.title = element_text(size =25, face = "bold"),
-    legend.text = element_text(size = 15),
-    legend.title = element_text(size = 17, face = "bold")
-  ) +
-  guides(color = guide_legend(override.aes = list(size = 5)), size = "none") +
-  transition_time(Date) +
-  enter_fade() +
-  exit_fade() +
-  ease_aes("linear")
-
-days = as.numeric(latest_date - as.Date("2020-01-22"))
-
-anim_save("covid19_timelapse.gif", p, height = 600, width = 1000, fps = 10, nframes = days*2, end_pause = 30)
-```
-![](covid19_timelapse.gif)
-
 
 ```{r cases_count_percent_agg, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 percent_count <- cv_merge %>%
