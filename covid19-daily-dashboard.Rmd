@@ -25,6 +25,7 @@ library(gganimate)
 library(maps)
 library(png)
 library(gifski)
+library(plotly)
 ```
 
 
@@ -259,24 +260,51 @@ for (x in seq(2, nrow(top10_df))) {
 }
 ```
 
-```{r plot_first_cases_total, echo=FALSE, fig.width=10, fig.height=6}  
-ggplot(top10_df, aes(x = `Days Since First Case`, y=Count, group=Country_Region)) +
-  geom_line(aes(color = Country_Region), size=0.75) +
-  ggtitle("Total Confirmed Cases Since First 25 Cases") +
-  xlab(label="Days Since First 25 Cases") +
-  ylab(label="Total Count") +
-  theme_light() +
-  theme(legend.position="bottom", legend.title = element_blank())
+
+```{r plotly_total_cases, echo=FALSE, fig.width=10, fig.height=6}
+top10_df_wide_count <- top10_df %>%
+  filter(`Days Since First Case` != 0) %>%
+  select(Country_Region, Count, `Days Since First Case`) %>%
+  spread(key=Country_Region, value=Count)
+
+
+fig <- top10_df_wide_count %>% plot_ly()
+
+for (k in 2:length(top_10_countries)) {
+  country_df <- data.frame(y=top10_df_wide_count[[k]], x=top10_df_wide_count[[1]])
+  fig <- add_trace(fig, y=~y, x=~x, data=country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_count)[k])
+}
+
+fig <- fig %>% layout(
+    title = "Total Confirmed Cases Since First 25 Cases",
+    xaxis = list(title='Days Since First 25 Cases', rangeslider = list(type = "int")),
+    yaxis = list(title = "Total Count"))
+
+
+fig
 ```
 
-```{r daily_confirmed_cases, echo=FALSE, fig.width=10, fig.height=6}  
-ggplot(top10_df, aes(x = `Days Since First Case`, y=Daily_Count, group=Country_Region)) +
-  geom_line(aes(color = Country_Region), size=0.75) +
-  ggtitle("Daily Confirmed Cases Since First 25 Case") +
-  xlab(label="Days Since First 25 Cases") +
-  ylab(label="Daily Count") +
-  theme_light() +
-  theme(legend.position="bottom", legend.title = element_blank())
+```{r plot_first_cases_total, echo=FALSE, fig.width=10, fig.height=6}  
+top10_df_wide_daily <- top10_df %>%
+  filter(`Days Since First Case` != 0) %>%
+  select(Country_Region, Daily_Count, `Days Since First Case`) %>%
+  spread(key=Country_Region, value=Daily_Count)
+
+
+fig <- top10_df_wide_daily %>% plot_ly()
+
+for (k in 2:length(top_10_countries)) {
+  country_df <- data.frame(y=top10_df_wide_daily[[k]], x=top10_df_wide_daily[[1]])
+  fig <- add_trace(fig, y=~y, x=~x, data=country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_daily)[k])
+}
+
+fig <- fig %>% layout(
+    title = "Daily Confirmed Cases Since First 25 Cases",
+    xaxis = list(title='Days Since First 25 Cases', rangeslider = list(type = "int")),
+    yaxis = list(title = "Daily Count"))
+
+
+fig
 ```
 
 ### COVID19 Cases Spread Timelapse
