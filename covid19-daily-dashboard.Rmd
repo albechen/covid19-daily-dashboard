@@ -188,7 +188,7 @@ cv_latest
 ```
 
 
-```{r week_leafly_plot, echo=FALSE}
+```{r , echo=FALSE}
 cv_latest_labels <- function(df) {
   labs <- lapply(seq(nrow(df)), function(i) {
     paste0(
@@ -254,7 +254,7 @@ for (x in seq(2, nrow(top10_df))) {
 }
 ```
 
-```{r plot_status_per_day, echo=FALSE, fig.width=10, fig.height=6}  
+```{r , echo=FALSE, fig.width=10, fig.height=6}  
 ggplot(top10_df, aes(x = `Days Since First Case`, y=Count, group=Country_Region)) +
   geom_line(aes(color = Country_Region), size=1) +
   ggtitle("Total Confirmed Cases Since First Case") +
@@ -263,7 +263,7 @@ ggplot(top10_df, aes(x = `Days Since First Case`, y=Count, group=Country_Region)
 ```
 
 
-```{r plot_status_per_day, echo=FALSE, fig.width=10, fig.height=6}  
+```{r , echo=FALSE, fig.width=10, fig.height=6}  
 ggplot(top10_df, aes(x = `Days Since First Case`, y=Daily_Count, group=Country_Region)) +
   geom_line(aes(color = Country_Region), size=1) +
   ggtitle("Total Confirmed Cases Daily Since First Case") +
