@@ -232,10 +232,10 @@ country_table
 ```
 
 ```{r df_for_top_countries, echo=FALSE}
-top_10_countries <- (head(country_table$Country_Region, 15))
+top_10_countries <- (head(country_table$Country_Region, 16))
 
 top10_df <- cv %>%
-  filter((cv$Country_Region %in% c(top_10_countries)) & (cv$Status == 'Confirmed')) %>%
+  filter((cv$Country_Region %in% c(top_10_countries)) & (cv$Status == 'Confirmed'), (cv$Country_Region != 'China')) %>%
   select(Country_Region, Date, Count, Daily_Count) %>%
   group_by(Country_Region, Date) %>%
   summarise(Count = sum(Count, na.rm = TRUE), Daily_Count = sum(Daily_Count, na.rm = TRUE))
@@ -245,7 +245,7 @@ top10_df <- top10_df[with(top10_df, order(Country_Region, Date)), ]
 top10_df$`Days Since First Case` <- 0
 
 for (x in seq(2, nrow(top10_df))) {
-  if (top10_df$Country_Region[x] == top10_df$Country_Region[x-1]) {
+  if ((top10_df$Country_Region[x] == top10_df$Country_Region[x-1]) & (top10_df$Count[x] >= 25)) {
     if (top10_df$`Days Since First Case`[x-1] == 0){
       if (top10_df$Daily_Count[x] > 0) {
         top10_df$`Days Since First Case`[x] <- 1
@@ -261,16 +261,20 @@ for (x in seq(2, nrow(top10_df))) {
 
 ```{r plot_first_cases_total, echo=FALSE, fig.width=10, fig.height=6}  
 ggplot(top10_df, aes(x = `Days Since First Case`, y=Count, group=Country_Region)) +
-  geom_line(aes(color = Country_Region), size=1) +
-  ggtitle("Total Confirmed Cases Since First Case") +
+  geom_line(aes(color = Country_Region), size=0.75) +
+  ggtitle("Total Confirmed Cases Since First 25 Cases") +
+  xlab(label="Days Since First 25 Cases") +
+  ylab(label="Total Count") +
   theme_light() +
   theme(legend.position="bottom", legend.title = element_blank())
 ```
 
 ```{r daily_confirmed_cases, echo=FALSE, fig.width=10, fig.height=6}  
 ggplot(top10_df, aes(x = `Days Since First Case`, y=Daily_Count, group=Country_Region)) +
-  geom_line(aes(color = Country_Region), size=1) +
-  ggtitle("Daily Confirmed Cases Since First Case") +
+  geom_line(aes(color = Country_Region), size=0.75) +
+  ggtitle("Daily Confirmed Cases Since First 25 Case") +
+  xlab(label="Days Since First 25 Cases") +
+  ylab(label="Daily Count") +
   theme_light() +
   theme(legend.position="bottom", legend.title = element_blank())
 ```
