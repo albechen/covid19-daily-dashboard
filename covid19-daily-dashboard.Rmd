@@ -207,7 +207,7 @@ leaflet(data = cv_latest, width = "100%") %>%
   addCircleMarkers(
     lat = ~Lat,
     lng = ~Long,
-    radius = ~ log(Confirmed) / 2,
+    radius = ~ log(Confirmed, 1.1)/10,
     label = lapply(cv_latest_labels(cv_latest), htmltools::HTML)
   )
 ```
