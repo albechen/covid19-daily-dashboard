@@ -115,7 +115,8 @@ daily_weekly_counter <- function(cv) {
 
 ```{r, apply_check_case, echo=FALSE, message=FALSE, warning=FALSE}
 cv <- daily_weekly_counter(cv)
-latest_date <- sort(cv$Date, decreasing = TRUE)[1] - 1
+latest_date <- as.Date(Sys.Date()) - 1
+#latest_date <- sort(cv$Date, decreasing = TRUE)[1] - 1
 cv <- filter(cv, Date <= latest_date)
 ```
 
@@ -177,6 +178,97 @@ first_and_new_cases <- function(cv, days) {
 
 new_cases_day <- first_and_new_cases(cv, 1)
 new_cases_week <- first_and_new_cases(cv, 7)
+```
+
+
+```{r, echo=FALSE}
+cv_latest <- filter(cv_merge, Date == latest_date)
+cv_latest <- cv_latest[with(cv_latest, order(-Confirmed, -Recovered, -Dead)), ]
+cv_latest
+```
+
+
+```{r week_leafly_plot, echo=FALSE}
+cv_latest_labels <- function(df) {
+  labs <- lapply(seq(nrow(df)), function(i) {
+    paste0(
+      "Country: ", df[i, "Country_Region"], "<br> ",
+      "Province: ", df[i, "Province_State"], "<br>",
+      "Confirmed: ", df[i, "Confirmed"], "<br>",
+      "Dead: ", df[i, "Dead"], "<br>",
+      "Recovered: ", df[i, "Recovered"], "<br>",
+      "Date: ", df[i, "Date"]
+    )
+  })
+}
+
+leaflet(data = cv_latest, width = "100%") %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lat = ~Lat,
+    lng = ~Long,
+    radius = ~ log(Confirmed) / 2,
+    label = lapply(cv_latest_labels(cv_latest), htmltools::HTML)
+  )
+```
+
+The table below shows aggregated data of each country's confirmed, recovered, and dead population. Each column can be sorted to view least or most of each status or to sort alphabetically by country / region name.
+
+```{r country_table, echo=FALSE}
+country_table <- cv_merge %>%
+  select(Country_Region, Confirmed, Recovered, Dead, Date) %>%
+  group_by(Country_Region) %>%
+  filter(Date==latest_date) %>%
+  select(Country_Region, Confirmed, Recovered, Dead) %>%
+  summarise_all(sum)
+country_table <- country_table[with(country_table, order(-Confirmed, -Recovered, -Dead)), ]
+
+country_table
+```
+
+```{r, echo=FALSE}
+top_10_countries <- (head(country_table$Country_Region, 15))
+
+top10_df <- cv %>%
+  filter((cv$Country_Region %in% c(top_10_countries)) & (cv$Status == 'Confirmed')) %>%
+  select(Country_Region, Date, Count, Daily_Count) %>%
+  group_by(Country_Region, Date) %>%
+  summarise(Count = sum(Count, na.rm = TRUE), Daily_Count = sum(Daily_Count, na.rm = TRUE))
+
+
+top10_df <- top10_df[with(top10_df, order(Country_Region, Date)), ]
+top10_df$`Days Since First Case` <- 0
+
+for (x in seq(2, nrow(top10_df))) {
+  if (top10_df$Country_Region[x] == top10_df$Country_Region[x-1]) {
+    if (top10_df$`Days Since First Case`[x-1] == 0){
+      if (top10_df$Daily_Count[x] > 0) {
+        top10_df$`Days Since First Case`[x] <- 1
+      }
+    }
+    else {
+      interval <- top10_df$`Days Since First Case`[x-1]
+      top10_df$`Days Since First Case`[x] <- 1 + interval
+    }
+  }
+}
+```
+
+```{r plot_status_per_day, echo=FALSE, fig.width=10, fig.height=6}  
+ggplot(top10_df, aes(x = `Days Since First Case`, y=Count, group=Country_Region)) +
+  geom_line(aes(color = Country_Region), size=1) +
+  ggtitle("Total Confirmed Cases Since First Case") +
+  theme_light() +
+  theme(legend.position="bottom", legend.title = element_blank())
+```
+
+
+```{r plot_status_per_day, echo=FALSE, fig.width=10, fig.height=6}  
+ggplot(top10_df, aes(x = `Days Since First Case`, y=Daily_Count, group=Country_Region)) +
+  geom_line(aes(color = Country_Region), size=1) +
+  ggtitle("Total Confirmed Cases Daily Since First Case") +
+  theme_light() +
+  theme(legend.position="bottom", legend.title = element_blank())
 ```
 
 ### New Cases of the Day (`r latest_date`)
@@ -341,21 +433,6 @@ percent_org <- percent_count %>%
 ```
 
 ### General Trends
-
-The table below shows aggregated data of each country's confirmed, recovered, and dead population. Each column can be sorted to view least or most of each status or to sort alphabetically by country / region name.
-
-```{r country_table, echo=FALSE}
-country_table <- cv_merge %>%
-  select(Country_Region, Confirmed, Recovered, Dead, Date) %>%
-  group_by(Country_Region) %>%
-  filter(Date==latest_date) %>%
-  select(Country_Region, Confirmed, Recovered, Dead) %>%
-  summarise_all(sum)
-country_table <- country_table[with(country_table, order(-Confirmed, -Recovered, -Dead)), ]
-
-country_table
-```
-
 
 The plots below outlines general trends seen of the virus over time:
 
