@@ -284,7 +284,7 @@ p <- ggplot() +
   borders("world", colour = "white", fill = "gray85") +
   coord_map(xlim = c(-180, 180), ylim = c(-55, 70)) +
   theme_map() +
-  geom_point(data = filter(cv, Date<=latest_date), aes(x = Long, y = Lat, size = log(Count), color = Status), alpha = 0.25) +
+  geom_point(data = filter(cv, Date<=latest_date), aes(x = Long, y = Lat, size = (Count), color = Status), alpha = 0.25) +
   scale_size_continuous(range = c(1, 15)) +
   scale_color_manual(values = c("blue", "red", "green")) +
   labs(title = "Date: {frame_time}", size = "Log(Cases)") +
