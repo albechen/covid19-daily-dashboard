@@ -26,6 +26,7 @@ library(maps)
 library(png)
 library(gifski)
 library(plotly)
+library(pals)
 ```
 
 
@@ -54,6 +55,8 @@ cv_ded <- read_csv("data_raw/time_series_covid19_deaths_global.csv") %>%
 
 cv_rec <- read_csv("data_raw/time_series_covid19_recovered_global.csv") %>%
   gather(key = "Date", value = Recovered, -Lat, -Long, -`Province/State`, -`Country/Region`)
+
+country_pop <- read_csv("data_raw/country_population.csv")
 ```
 
 
@@ -215,9 +218,11 @@ leaflet(data = cv_latest, width = "100%") %>%
 
 
 ### Confirmed Cases per Country
-The table below shows aggregated data of each country's confirmed, recovered, and dead population. Each column can be sorted to view least or most of each status. The graphs below show the total and daily count of confirmed cases for the countries with the most cases and are tracked by days since the first reported case.
+The table below shows aggregated data of each country's confirmed, recovered, and dead population. Each column can be sorted to view least or most of each status. The graphs below show the total and daily count of confirmed cases for the countries with the most cases and are tracked by days since the first reported case. Each graph has two seperate views - one with total count and another with % of country's population. The population data is retrived from the [United Nations](https://population.un.org/wpp/Download/Standard/CSV/).
 
-(*China's dataset goes back further and therefore does not align with other countries)
+
+
+(*China's data is removed since dataset does not track prior to 22Jan20 therefore does not align with other countries)
 
 
 ```{r country_table, echo=FALSE}
@@ -237,9 +242,9 @@ top_10_countries <- (head(country_table$Country_Region, 16))
 
 top10_df <- cv %>%
   filter((cv$Country_Region %in% c(top_10_countries)) & (cv$Status == 'Confirmed'), (cv$Country_Region != 'China')) %>%
-  select(Country_Region, Date, Count, Daily_Count) %>%
+  select(Country_Region, Date, Count, Daily_Count, Weekly_Count) %>%
   group_by(Country_Region, Date) %>%
-  summarise(Count = sum(Count, na.rm = TRUE), Daily_Count = sum(Daily_Count, na.rm = TRUE))
+  summarise(Count = sum(Count, na.rm = TRUE), Daily_Count = sum(Daily_Count, na.rm = TRUE), Weekly_Count = sum(Weekly_Count, na.rm = TRUE))
 
 
 top10_df <- top10_df[with(top10_df, order(Country_Region, Date)), ]
@@ -258,51 +263,160 @@ for (x in seq(2, nrow(top10_df))) {
     }
   }
 }
+
+
+top10_df <- merge(top10_df,country_pop,by=c('Country_Region','Country_Region'))
+top10_df$P_Count <- top10_df$Count / top10_df$Population
+top10_df$P_Daily_Count <- top10_df$Daily_Count / top10_df$Population
+top10_df$P_Weekly_Count <- top10_df$Weekly_Count / top10_df$Population
+top10_df <- top10_df %>% select(Country_Region, Date, Count,  P_Count, Daily_Count, P_Daily_Count, Weekly_Count, P_Weekly_Count, `Days Since First Case`)
+top10_df <- top10_df[with(top10_df, order(Country_Region, Date)), ]
+
 ```
 
+```{r total_plotly, echo=FALSE, warning=FALSE, fig.width=10, fig.height=6}
+top10_df_wide_p_count <- top10_df %>%
+  filter(`Days Since First Case` != 0) %>%
+  select(Country_Region, P_Count, `Days Since First Case`) %>%
+  spread(key=Country_Region, value=P_Count)
 
-```{r plotly_total_cases, echo=FALSE, fig.width=10, fig.height=6}
 top10_df_wide_count <- top10_df %>%
   filter(`Days Since First Case` != 0) %>%
   select(Country_Region, Count, `Days Since First Case`) %>%
   spread(key=Country_Region, value=Count)
 
 
+palette <- distinctColorPalette(20)
+
 fig <- top10_df_wide_count %>% plot_ly()
 
 for (k in 2:length(top_10_countries)) {
   country_df <- data.frame(y=top10_df_wide_count[[k]], x=top10_df_wide_count[[1]])
-  fig <- add_trace(fig, y=~y, x=~x, data=country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_count)[k])
+  fig <- add_trace(fig, y=~y, x=~x, data=country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_count)[k], visible = F, color = palette[k])
+  
+  p_country_df <- data.frame(y=top10_df_wide_p_count[[k]], x=top10_df_wide_p_count[[1]])
+  fig <- add_trace(fig, y=~y, x=~x, data=p_country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_p_count)[k], color = palette[k])
 }
 
 fig <- fig %>% layout(
     title = "Total Confirmed Cases Since First 25 Cases",
-    xaxis = list(title='Days Since First 25 Cases', rangeslider = list(type = "int")),
-    yaxis = list(title = "Total Count"))
+    xaxis = list(title='Days Since First 25 Cases'),
+    yaxis = list(title = "Total Count (% or #)"),
+    updatemenus = list(
+      list(
+        y = 0.8,
+        buttons = list(
 
+          list(method = "restyle",
+               args = list("visible", c(rep(list(FALSE, TRUE), 15))),
+               label = "Percent Count"),
+
+          list(method = "restyle",
+               args = list("visible", c(rep(list(TRUE, FALSE), 15))),
+               label = "Total Count")
+        )
+        )
+      )
+    )
 
 fig
 ```
 
-```{r plot_first_cases_total, echo=FALSE, fig.width=10, fig.height=6}  
+```{r weekly_plotly, echo=FALSE, warning=FALSE, fig.width=10, fig.height=6}
+top10_df_wide_p_weekly <- top10_df %>%
+  filter(`Days Since First Case` != 0) %>%
+  select(Country_Region, P_Weekly_Count, `Days Since First Case`) %>%
+  spread(key=Country_Region, value=P_Weekly_Count)
+
+top10_df_wide_weekly <- top10_df %>%
+  filter(`Days Since First Case` != 0) %>%
+  select(Country_Region, Weekly_Count, `Days Since First Case`) %>%
+  spread(key=Country_Region, value=Weekly_Count)
+
+
+palette <- distinctColorPalette(20)
+
+fig <- top10_df_wide_weekly %>% plot_ly()
+
+for (k in 2:length(top_10_countries)) {
+  country_df <- data.frame(y=top10_df_wide_weekly[[k]], x=top10_df_wide_weekly[[1]])
+  fig <- add_trace(fig, y=~y, x=~x, data=country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_weekly)[k], visible = F, color = palette[k])
+  
+  p_country_df <- data.frame(y=top10_df_wide_p_weekly[[k]], x=top10_df_wide_p_weekly[[1]])
+  fig <- add_trace(fig, y=~y, x=~x, data=p_country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_p_weekly)[k], color = palette[k])
+}
+
+fig <- fig %>% layout(
+    title = "Weekly Confirmed Cases Since First 25 Cases",
+    xaxis = list(title='Days Since First 25 Cases'),
+    yaxis = list(title = "Weekly Count (% or #)"),
+    updatemenus = list(
+      list(
+        y = 0.8,
+        buttons = list(
+
+          list(method = "restyle",
+               args = list("visible", c(rep(list(FALSE, TRUE), 15))),
+               label = "Percent Count"),
+
+          list(method = "restyle",
+               args = list("visible", c(rep(list(TRUE, FALSE), 15))),
+               label = "Total Count")
+        )
+        )
+      )
+    )
+
+fig
+```
+
+
+
+```{r daily_plotly, echo=FALSE, warning=FALSE, fig.width=10, fig.height=6}  
+
+top10_df_wide_p_daily <- top10_df %>%
+  filter(`Days Since First Case` != 0) %>%
+  select(Country_Region, P_Daily_Count, `Days Since First Case`) %>%
+  spread(key=Country_Region, value=P_Daily_Count)
+
 top10_df_wide_daily <- top10_df %>%
   filter(`Days Since First Case` != 0) %>%
   select(Country_Region, Daily_Count, `Days Since First Case`) %>%
   spread(key=Country_Region, value=Daily_Count)
 
 
+palette <- distinctColorPalette(20)
+
 fig <- top10_df_wide_daily %>% plot_ly()
 
 for (k in 2:length(top_10_countries)) {
   country_df <- data.frame(y=top10_df_wide_daily[[k]], x=top10_df_wide_daily[[1]])
-  fig <- add_trace(fig, y=~y, x=~x, data=country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_daily)[k])
+  fig <- add_trace(fig, y=~y, x=~x, data=country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_daily)[k], visible = F, color = palette[k])
+  
+  p_country_df <- data.frame(y=top10_df_wide_p_daily[[k]], x=top10_df_wide_p_daily[[1]])
+  fig <- add_trace(fig, y=~y, x=~x, data=p_country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_p_daily)[k], color = palette[k])
 }
 
 fig <- fig %>% layout(
     title = "Daily Confirmed Cases Since First 25 Cases",
-    xaxis = list(title='Days Since First 25 Cases', rangeslider = list(type = "int")),
-    yaxis = list(title = "Daily Count"))
+    xaxis = list(title='Days Since First 25 Cases'),
+    yaxis = list(title = "Daily Count (% or #)"),
+    updatemenus = list(
+      list(
+        y = 0.8,
+        buttons = list(
 
+          list(method = "restyle",
+               args = list("visible", c(rep(list(FALSE, TRUE), 15))),
+               label = "Percent Count"),
+
+          list(method = "restyle",
+               args = list("visible", c(rep(list(TRUE, FALSE), 15))),
+               label = "Total Count")
+        )
+        )
+      )
+    )
 
 fig
 ```
