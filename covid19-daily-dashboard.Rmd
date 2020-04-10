@@ -628,10 +628,6 @@ ggplot(dead_conf_recv_daily, aes(x = Date, y=Count, group=Daily)) +
   theme(legend.position="bottom", legend.title = element_blank())
 ```
 
-
-
-
-
 ```{r github_pushing_commands, include=FALSE}
 gitstatus <- function(dir = getwd()) {
   cmd_list <- list(
