@@ -238,7 +238,7 @@ country_table
 ```
 
 ```{r df_for_top_countries, echo=FALSE}
-top_10_countries <- (head(country_table$Country_Region, 16))
+top_10_countries <- (head(country_table$Country_Region, 10))
 
 top10_df <- cv %>%
   filter((cv$Country_Region %in% c(top_10_countries)) & (cv$Status == 'Confirmed'), (cv$Country_Region != 'China')) %>%
