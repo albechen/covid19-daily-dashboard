@@ -238,10 +238,12 @@ country_table
 ```
 
 ```{r df_for_top_countries, echo=FALSE}
-top_10_countries <- (head(country_table$Country_Region, 10))
+top_10_countries <- (head(country_table$Country_Region, 11))
+top_10_countries <- top_10_countries[top_10_countries != "Russia"]
+top_10_countries <- top_10_countries[top_10_countries != "China"]
 
 top10_df <- cv %>%
-  filter((cv$Country_Region %in% c(top_10_countries)) & (cv$Status == 'Confirmed'), (cv$Country_Region != 'China')) %>%
+  filter((cv$Country_Region %in% c(top_10_countries)) & (cv$Status == 'Confirmed')) %>%
   select(Country_Region, Date, Count, Daily_Count, Weekly_Count) %>%
   group_by(Country_Region, Date) %>%
   summarise(Count = sum(Count, na.rm = TRUE), Daily_Count = sum(Daily_Count, na.rm = TRUE), Weekly_Count = sum(Weekly_Count, na.rm = TRUE))
@@ -274,6 +276,11 @@ top10_df <- top10_df[with(top10_df, order(Country_Region, Date)), ]
 
 ```
 
+```{r}
+top_10_countries
+```
+
+
 ```{r total_plotly, echo=FALSE, warning=FALSE, fig.width=10, fig.height=6}
 top10_df_wide_p_count <- top10_df %>%
   filter(`Days Since First Case` != 0) %>%
@@ -286,16 +293,14 @@ top10_df_wide_count <- top10_df %>%
   spread(key=Country_Region, value=Count)
 
 
-palette <- distinctColorPalette(20)
-
 fig <- top10_df_wide_count %>% plot_ly()
 
 for (k in 2:length(top_10_countries)) {
   country_df <- data.frame(y=top10_df_wide_count[[k]], x=top10_df_wide_count[[1]])
-  fig <- add_trace(fig, y=~y, x=~x, data=country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_count)[k], visible = F, color = palette[k])
+  fig <- add_trace(fig, y=~y, x=~x, data=country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_count)[k], visible = F)
   
   p_country_df <- data.frame(y=top10_df_wide_p_count[[k]], x=top10_df_wide_p_count[[1]])
-  fig <- add_trace(fig, y=~y, x=~x, data=p_country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_p_count)[k], color = palette[k])
+  fig <- add_trace(fig, y=~y, x=~x, data=p_country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_p_count)[k])
 }
 
 fig <- fig %>% layout(
@@ -333,17 +338,14 @@ top10_df_wide_weekly <- top10_df %>%
   select(Country_Region, Weekly_Count, `Days Since First Case`) %>%
   spread(key=Country_Region, value=Weekly_Count)
 
-
-palette <- distinctColorPalette(20)
-
 fig <- top10_df_wide_weekly %>% plot_ly()
 
 for (k in 2:length(top_10_countries)) {
   country_df <- data.frame(y=top10_df_wide_weekly[[k]], x=top10_df_wide_weekly[[1]])
-  fig <- add_trace(fig, y=~y, x=~x, data=country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_weekly)[k], visible = F, color = palette[k])
+  fig <- add_trace(fig, y=~y, x=~x, data=country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_weekly)[k], visible = F)
   
   p_country_df <- data.frame(y=top10_df_wide_p_weekly[[k]], x=top10_df_wide_p_weekly[[1]])
-  fig <- add_trace(fig, y=~y, x=~x, data=p_country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_p_weekly)[k], color = palette[k])
+  fig <- add_trace(fig, y=~y, x=~x, data=p_country_df, type="scatter", mode="lines", name = colnames(top10_df_wide_p_weekly)[k])
 }
 
 fig <- fig %>% layout(
