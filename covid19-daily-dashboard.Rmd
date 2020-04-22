@@ -192,7 +192,7 @@ cv_latest <- cv_latest[with(cv_latest, order(-Confirmed, -Recovered, -Dead)), ]
 
 ### Overview of Cases (`r latest_date`)
 Below is an interactive plot displaying the number of confirmed, dead, and recovered cases per country and province if data is specified. The data was aggregated from the Johns Hopkins's data repository and this notebook is set to run nightly to provide up to date results
-```{r full_plot, echo=FALSE}
+```{r full_plot, echo=FALSE,message=FALSE, warning=FALSE}
 cv_latest_labels <- function(df) {
   labs <- lapply(seq(nrow(df)), function(i) {
     paste0(
